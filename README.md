@@ -1,36 +1,72 @@
-# Status_finder
-Status_finder
-🔍 check_domains.py — Domain Availability & Information Checker
-check_domains.py is a lightweight and efficient Python script designed to check the availability of domain names and fetch key details such as WHOIS records and DNS information. Ideal for cybersecurity researchers, developers, and domain investors, this tool helps automate the domain reconnaissance process.
+# Status Finder
 
-✨ Features
-Check if a domain is available for registration
+A lightweight Python script that checks whether hostnames listed in `subs.txt` respond over HTTP or HTTPS and records the results.
 
-Retrieve WHOIS information (registrar, creation/expiry dates, etc.)
+## What it does
 
-Fetch DNS records (A, MX, NS, TXT)
+For each non-empty line in `subs.txt`, `check_domains.py`:
 
-Support for multiple domain extensions (TLDs)
+1. Tries `http://<hostname>` first, then `https://<hostname>` if the first request raises a request exception.
+2. Follows redirects and uses a 5-second request timeout.
+3. Prints the first HTTP response status it receives.
+4. Appends responsive URLs to `responses/<status-code>.txt`. Hostnames for which both requests fail are appended to `responses/dead.txt`.
 
-Clean and customizable output format
+The script creates the `responses/` directory automatically.
 
-⚙️ Usage
+## Requirements
 
-python3 domains.py example.com
-🔧 Requirements
-Python 3.x
-reuests
+- Python 3
+- `requests`
 
-whois
+Install the dependency:
 
-dnspython
+```bash
+python3 -m pip install requests
+```
 
-Install dependencies:
+## Usage
 
-pip install python-whois dnspython
-📦 Use Cases
-Domain reconnaissance during bug bounty or pentesting
+Create `subs.txt` in the project directory with one hostname per line:
 
-Domain name monitoring and investment
+```text
+example.com
+www.example.org
+```
 
-Checking infrastructure exposure during OSINT
+Run the script from that directory:
+
+```bash
+python3 check_domains.py
+```
+
+Example output:
+
+```text
+[200] http://example.com
+[301] http://www.example.org
+[Dead] unreachable.example
+```
+
+The exact status codes and results depend on the target hosts and network conditions.
+
+## Output
+
+| Path | Meaning |
+| --- | --- |
+| `responses/200.txt` | URLs that returned HTTP status 200 |
+| `responses/<status-code>.txt` | URLs that returned the corresponding HTTP status |
+| `responses/dead.txt` | Hostnames for which both HTTP and HTTPS requests raised request exceptions |
+
+Results are appended, so repeated runs can add duplicate entries. Review or clear prior output files before starting a fresh collection.
+
+## Limitations
+
+- An HTTP response only indicates that a web endpoint responded; it does **not** establish domain-registration availability, DNS health, or overall application health.
+- A non-2xx status such as 403 or 404 is still recorded as a response.
+- The script does not perform WHOIS lookups or query DNS record types. Those capabilities are not implemented in the current code.
+- A hostname is marked `Dead` when both requests fail; transient network errors, TLS problems, and timeouts can produce the same result.
+- Use this tool only for hostnames you own or are authorized to assess.
+
+## Scope
+
+This is a basic HTTP/HTTPS responsiveness checker for domain-reconnaissance workflows, not a full domain availability or vulnerability scanner.
